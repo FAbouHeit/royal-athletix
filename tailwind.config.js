@@ -15,7 +15,10 @@ module.exports = {
       },
       fontFamily:{
         roboto: ['Roboto', 'sans-serif']
-      }
+      },
+      animation: {
+        spin: 'spin 4s linear infinite',
+      },
     },
   },
   plugins: [],
