@@ -5,7 +5,10 @@ import CtaButton from "../ctaButton/CtaButton";
 
 export default function HeroImage() {
   const [mouseOverImage, setMouseOverImage] = useState(false);
+  const [mouseOverCTA, setMouseOverCTA] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [flipper, setFlipper] = useState(false);
+  let timer
 
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
@@ -20,6 +23,15 @@ export default function HeroImage() {
 
   const imageRef = useRef(null);
 
+  useEffect(() => {
+    if (mouseOverImage) {
+      const timer = setInterval(() => {
+        setFlipper((prevFlipper) => !prevFlipper);
+      }, 100);
+
+      return () => clearInterval(timer);
+    }
+  }, [mouseOverImage]);
   //get image position
   useEffect(() => {
     const updatePosition = () => {
@@ -52,7 +64,7 @@ export default function HeroImage() {
         window.removeEventListener("mousemove", handleMouseMove);
       };
     }
-  }, [mouseOverImage]);
+  }, [flipper]);
 
   //get scroll position
   useEffect(() => {
@@ -75,39 +87,99 @@ export default function HeroImage() {
     };
   }, []);
 
+  let calculateLineLength = (a,b,i,j) =>{
+    let length = Math.sqrt((a-i)**2 + (b-j)**2)
+    return length
+  }
+
+
   //set CTA Button position
   useEffect(() => {
     let radius = window.screen.width * 0.1;
     let centerX = window.screen.width * 0.5;
     let centerY = Math.floor(imageDimensions.height / 2);
-    let x = Math.max(
-      centerX - radius,
-      Math.min(pointerPosition.x, centerX + radius)
-    );
-    let y = Math.max(
-      centerY - Math.sqrt(Math.max(0, radius ** 2 - (x - centerX) ** 2)),
-      Math.min(
-        pointerPosition.y - imagePosition.y,
-        centerY + Math.sqrt(Math.max(0, radius ** 2 - (x - centerX) ** 2))
-      )
-    );
+    let totalDistance = calculateLineLength(pointerPosition.x, pointerPosition.y, centerX,centerY)
+
+    let provX = centerX + radius*(pointerPosition.x - centerX) / totalDistance
+    let provY = centerY + radius*(pointerPosition.y - centerY) / totalDistance
+
+    if(totalDistance > radius){
+      console.log("greater than the radius " + totalDistance)
+      // setCtaDimensions({
+      //   //need to set max and min
+      //   x: provX,
+      //   y: provY,
+      // });
+    } else {
+      console.log("within radius: " + radius)
+    }
+
+    // let x = Math.max(
+    //   centerX - radius,
+    //   Math.min(pointerPosition.x, centerX + radius)
+    // );
+    // let y = Math.max(
+    //   centerY - Math.sqrt(Math.max(0, radius ** 2 - (x - centerX) ** 2)),
+    //   Math.min(
+    //     pointerPosition.y - imagePosition.y,
+    //     centerY + Math.sqrt(Math.max(0, radius ** 2 - (x - centerX) ** 2))
+    //   )
+    // );
 
     let defaultX = pointerPosition.x;
     let defaultY = pointerPosition.y - imagePosition.y;
 
     if (mouseOverImage) {
+      //if within radius
+      if (totalDistance < radius){
       setCtaDimensions({
+        //need to set max and min
         x: defaultX,
         y: defaultY,
       });
-    } else {
+    }else{
+      // circular dimensions
       setCtaDimensions({
-        x: window.screen.width / 2,
-        y: Math.floor(imageDimensions.height / 2),
-        // y:  imagePosition.y +(imageDimensions.height/2),
+        //need to set max and min
+        x: provX,
+        y: provY,
       });
+      }
+    } else {
+      // setCtaDimensions({
+      //   x: window.screen.width / 2,
+      //   y: Math.floor(imageDimensions.height / 2),
+      // });
+
+      const timer = setInterval(() => {
+        // if(!mouseOverImage && !mouseOverCTA){
+        console.log("after a sec mouse over image? " + mouseOverImage);
+        setCtaDimensions({
+          x: window.screen.width / 2,
+          y: Math.floor(imageDimensions.height / 2),
+        });
+        // }
+      }, 1000);
+      return () => clearInterval(timer);
     }
-  }, [pointerPosition, imageDimensions]);
+  }, [flipper]);
+  // }, [pointerPosition, imageDimensions]);
+
+  useEffect(() => {
+    clearInterval(timer);
+      timer = setInterval(() => {
+        console.log("after a sec mouse over image? " + mouseOverImage);
+        if (!mouseOverImage && !mouseOverCTA) {
+
+        setCtaDimensions({
+          x: window.screen.width / 2,
+          y: Math.floor(imageDimensions.height / 2),
+        });
+      }
+      }, 1000);
+      return () => clearInterval(timer);
+    
+  }, [mouseOverImage]);
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -121,6 +193,8 @@ export default function HeroImage() {
             width={200}
             height={200}
             className="animate-spin z-99"
+            onMouseEnter={()=> setMouseOverCTA(true)}
+            onMouseLeave={()=> {setMouseOverCTA(false); console.log("mouse just left image: " + mouseOverImage + "and cta")}}
           />
         </div>
         <Image
